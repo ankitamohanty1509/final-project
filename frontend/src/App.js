@@ -5,8 +5,7 @@ function App() {
   const [items, setItems] = useState([]);
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
-	
-  const backendUrl = 'http://ad7e825b70b1a4653852d0397191be98-1760399707.us-east-1.elb.amazonaws.com:4000';
+  const backendUrl = 'http://a3b5c51618df4463bafd1bd3cf1569e5-891314209.us-east-1.elb.amazonaws.com:4000';
 
   // Fetch items from backend
   const fetchItems = () => {
@@ -35,7 +34,8 @@ function App() {
       body: JSON.stringify({ name, quantity })
     })
       .then((res) => res.json())
-      .then(() => {
+      .then((data) => {
+        alert("Item added successfully!");
         setName('');
         setQuantity('');
         fetchItems(); // Refresh the list
