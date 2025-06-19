@@ -1,13 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./db');
+const path = require('path');
+
 const app = express();
 const PORT = 4000;
 
 app.use(cors());
 app.use(express.json());
 
-// Add item to DB
+// ========== API Routes ==========
+
+// Add new item
 app.post('/add-item', (req, res) => {
   const { name, quantity } = req.body;
 
@@ -25,7 +29,7 @@ app.post('/add-item', (req, res) => {
   });
 });
 
-// Fetch all items
+// Get all items
 app.get('/items', (req, res) => {
   db.query('SELECT * FROM items', (err, results) => {
     if (err) {
@@ -36,7 +40,16 @@ app.get('/items', (req, res) => {
   });
 });
 
-// Start server
+// ========== Serve React Frontend ==========
+
+app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build/index.html'));
+});
+
+// ========== Start Server ==========
+
 app.listen(PORT, () => {
   console.log(`✅ Inventory Service is running on port ${PORT}`);
 });
