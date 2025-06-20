@@ -1,15 +1,19 @@
-require('dotenv').config(); // add this line
-
+require('dotenv').config();
 const mysql = require('mysql2');
 
-const connection = mysql.createConnection({
+// Create a pool for robust, auto-reconnecting queries
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,   // Tweak as needed
+  queueLimit: 0
 });
 
-connection.connect(err => {
+// Optional: check DB connection ONCE at startup (not required for every query)
+pool.query('SELECT 1', (err) => {
   if (err) {
     console.error('❌ MySQL connection failed:', err);
   } else {
@@ -17,4 +21,4 @@ connection.connect(err => {
   }
 });
 
-module.exports = connection;
+module.exports = pool;

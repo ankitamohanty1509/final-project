@@ -15,6 +15,7 @@ spec:
       containers:
         - name: inventory-backend
           image: 713881797197.dkr.ecr.us-east-1.amazonaws.com/inventory-backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 4000
           envFrom:

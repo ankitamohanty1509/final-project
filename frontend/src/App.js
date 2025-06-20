@@ -5,7 +5,7 @@ function App() {
   const [items, setItems] = useState([]);
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
-  const backendUrl = 'http://a3b5c51618df4463bafd1bd3cf1569e5-891314209.us-east-1.elb.amazonaws.com:4000';
+  const backendUrl = 'http://a911c4b704f9e4d4faca5c33750d02f9-677554030.us-east-1.elb.amazonaws.com:4000';
 
   // Fetch items from backend
   const fetchItems = () => {
