@@ -1,0 +1,54 @@
+
+version: 0.2
+
+env:
+  variables:
+    BACKEND_DIR: backend
+    FRONTEND_DIR: frontend
+    IMAGE_REPO_BACKEND: 235494811179.dkr.ecr.us-east-1.amazonaws.com/inventory-backend
+    IMAGE_REPO_FRONTEND: 235494811179.dkr.ecr.us-east-1.amazonaws.com/inventory-frontend
+    AWS_DEFAULT_REGION: us-east-1
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - echo "Installing backend dependencies..."
+      - cd $BACKEND_DIR && npm install
+      - cd ../$FRONTEND_DIR && npm install
+      - cd ../
+      # Download SonarQube Scanner
+      - echo "Downloading SonarQube Scanner..."
+      - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+      - unzip sonar-scanner.zip
+      - mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner
+      - export PATH=$PATH:/opt/sonar-scanner/bin
+      - echo "SonarQube Scanner installed."
+
+  pre_build:
+    commands:
+      - echo "Running SonarQube Scan..."
+      - export PATH=$PATH:/opt/sonar-scanner/bin
+      - sonar-scanner -Dsonar.projectKey=juhi-final -Dsonar.sources=. -Dsonar.host.url=http://3.92.231.52 -Dsonar.login=sqp_51f14dc3c99ed3b3dcaa80dbb73f0ce899452cf9
+
+  build:
+    commands:
+      - echo "Building frontend..."
+      - cd $FRONTEND_DIR
+      - REACT_APP_BACKEND_URL="a752484291a8f4f6ebe7fdcb7470ebcb-c1db37030359f84e.elb.us-west-1.amazonaws.com:4000" npm run build
+      - cd ../
+      - echo "Logging into Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 713881797197.dkr.ecr.us-west-1.amazonaws.com
+      - echo "Building backend Docker image..."
+      - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
+      - echo "Building frontend Docker image..."
+      - docker build -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
+      - echo "Pushing backend Docker image..."
+      - docker push $IMAGE_REPO_BACKEND:latest
+      - echo "Pushing frontend Docker image..."
+      - docker push $IMAGE_REPO_FRONTEND:latest
+
+artifacts:
+  base-directory: k8s
+  files:
+    - '**/*'
