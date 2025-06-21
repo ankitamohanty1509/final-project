@@ -5,8 +5,8 @@ function App() {
   const [items, setItems] = useState([]);
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
-  const backendUrl = 'http://a062f334012464cf3a040d7a4883febd-830524419.us-east-1.elb.amazonaws.com';
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+  
   // Fetch items from backend
   const fetchItems = () => {
     fetch(`${backendUrl}/items`)
