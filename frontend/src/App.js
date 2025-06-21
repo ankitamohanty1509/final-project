@@ -5,7 +5,7 @@ function App() {
   const [items, setItems] = useState([]);
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || '';
   
   // Fetch items from backend
   const fetchItems = () => {
