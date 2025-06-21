@@ -3,7 +3,6 @@ const mysql = require('mysql2');
 
 const dbName = process.env.DB_NAME;
 
-// Step 1: Pool WITHOUT database for initial creation
 const basePool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -13,44 +12,54 @@ const basePool = mysql.createPool({
   queueLimit: 0
 });
 
-// Step 2: Create database if not exists, THEN table
-basePool.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
-  if (err) {
-    console.error('❌ Failed to create DB:', err);
-    process.exit(1);
-  } else {
-    console.log(`✅ Database '${dbName}' ready`);
+// Create a ready-to-use pool variable
+let exportedPool;
 
-    const pool = mysql.createPool({
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: dbName,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    });
+// Helper to ensure DB and Table exist
+const ensureDbAndTable = () => {
+  return new Promise((resolve, reject) => {
+    basePool.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
+      if (err) return reject(err);
 
-    // Create table
-    pool.query(
-      `CREATE TABLE IF NOT EXISTS items (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100),
-        quantity INT
-      )`, (err) => {
-        if (err) {
-          console.error('❌ Table creation failed:', err);
-          process.exit(1);
-        } else {
-          console.log('✅ Table "items" ready');
+      const pool = mysql.createPool({
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        database: dbName,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+      });
+
+      pool.query(
+        `CREATE TABLE IF NOT EXISTS items (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(100),
+          quantity INT
+        )`, (err) => {
+          if (err) return reject(err);
+          resolve(pool);
         }
-      }
-    );
+      );
+    });
+  });
+};
 
-    // Export this pool for the rest of the app
-    module.exports = pool;
+// Immediately start init (at module load time)
+ensureDbAndTable()
+  .then(pool => {
+    exportedPool = pool;
+    console.log("✅ Table ready, exporting pool");
+  })
+  .catch(err => {
+    console.error("❌ DB/Table setup failed:", err);
+    process.exit(1);
+  });
+
+// Export a Proxy that always uses the real pool (after it’s ready)
+module.exports = new Proxy({}, {
+  get(target, prop) {
+    if (!exportedPool) throw new Error("DB pool not ready yet!");
+    return exportedPool[prop];
   }
 });
-
-// In case anything tries to import before pool is ready
-module.exports = basePool;
