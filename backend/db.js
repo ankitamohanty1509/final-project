@@ -1,7 +1,9 @@
 require('dotenv').config();
 const mysql = require('mysql2');
 
-// First, connect WITHOUT the DB to create it if needed
+const dbName = process.env.DB_NAME;
+
+// Step 1: Pool WITHOUT database for initial creation
 const basePool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -11,9 +13,7 @@ const basePool = mysql.createPool({
   queueLimit: 0
 });
 
-const dbName = process.env.DB_NAME;
-
-// Step 1: Ensure database exists
+// Step 2: Create database if not exists, THEN table
 basePool.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
   if (err) {
     console.error('❌ Failed to create DB:', err);
@@ -21,7 +21,6 @@ basePool.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
   } else {
     console.log(`✅ Database '${dbName}' ready`);
 
-    // Step 2: Now create a pool WITH the DB
     const pool = mysql.createPool({
       host: process.env.DB_HOST,
       user: process.env.DB_USER,
@@ -32,24 +31,26 @@ basePool.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\``, (err) => {
       queueLimit: 0
     });
 
-    // Step 3: Ensure table exists
-    const tableSql = `
-      CREATE TABLE IF NOT EXISTS items (
+    // Create table
+    pool.query(
+      `CREATE TABLE IF NOT EXISTS items (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100),
         quantity INT
-      )
-    `;
-    pool.query(tableSql, (err) => {
-      if (err) {
-        console.error('❌ Failed to create table:', err);
-        process.exit(1);
-      } else {
-        console.log('✅ Table "items" ready');
+      )`, (err) => {
+        if (err) {
+          console.error('❌ Table creation failed:', err);
+          process.exit(1);
+        } else {
+          console.log('✅ Table "items" ready');
+        }
       }
-    });
+    );
 
-    // Export the pool for use in your routes
+    // Export this pool for the rest of the app
     module.exports = pool;
   }
 });
+
+// In case anything tries to import before pool is ready
+module.exports = basePool;
