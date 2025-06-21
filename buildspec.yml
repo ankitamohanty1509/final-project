@@ -46,6 +46,11 @@ phases:
 
   build:
     commands:
+      # Apply DB Secret (must be before backend deployment)
+      - echo "Applying DB Secret..."
+      - kubectl apply -f k8s/db-secret.yaml
+
+      # Build & push backend image
       - echo "Building backend Docker image..."
       - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
       - docker tag $IMAGE_REPO_BACKEND:latest $IMAGE_REPO_BACKEND:$CODEBUILD_RESOLVED_SOURCE_VERSION
@@ -75,6 +80,7 @@ phases:
           exit 1
         fi
 
+      # Build & push frontend image with backend endpoint
       - echo "Building frontend Docker image with backend URL: http://$BACKEND_LB:4000"
       - docker build --build-arg REACT_APP_BACKEND_URL="http://$BACKEND_LB:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
       - docker tag $IMAGE_REPO_FRONTEND:latest $IMAGE_REPO_FRONTEND:$CODEBUILD_RESOLVED_SOURCE_VERSION
