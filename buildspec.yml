@@ -42,13 +42,12 @@ phases:
     commands:
       - echo "Building backend Docker image..."
       - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
-
       - echo "Building frontend Docker image (inject backend URL)..."
-      - docker build --build-arg REACT_APP_BACKEND_URL="http://backend-service:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
-
       - echo "Pushing backend Docker image..."
       - docker push $IMAGE_REPO_BACKEND:latest
-
+      - BACKEND_LB=$(kubectl get svc backend-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+      # Now build frontend with backend URL as build arg
+      - docker build --build-arg REACT_APP_BACKEND_URL="http://$BACKEND_LB:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
       - echo "Pushing frontend Docker image..."
       - docker push $IMAGE_REPO_FRONTEND:latest
 
