@@ -33,11 +33,7 @@ phases:
     commands:
       - echo "Running SonarQube Scan..."
       - export PATH=$PATH:/opt/sonar-scanner/bin
-      - sonar-scanner \
-          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-          -Dsonar.sources=. \
-          -Dsonar.host.url=$SONAR_HOST_URL \
-          -Dsonar.login=$SONAR_LOGIN
+      - sonar-scanner -Dsonar.projectKey=juhi-final -Dsonar.sources=. -Dsonar.host.url=http://3.92.231.52 -Dsonar.login=sqp_51f14dc3c99ed3b3dcaa80dbb73f0ce899452cf9
       # ECR login
       - echo "Logging into Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 235494811179.dkr.ecr.us-east-1.amazonaws.com
