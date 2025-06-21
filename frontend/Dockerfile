@@ -1,69 +1,8 @@
-version: 0.2
-
-env:
-  variables:
-    BACKEND_DIR: backend
-    FRONTEND_DIR: frontend
-    IMAGE_REPO_BACKEND: 235494811179.dkr.ecr.us-east-1.amazonaws.com/inventory-backend
-    IMAGE_REPO_FRONTEND: 235494811179.dkr.ecr.us-east-1.amazonaws.com/inventory-frontend
-    AWS_DEFAULT_REGION: us-east-1
-    SONAR_SCANNER_VERSION: 5.0.1.3006
-    SONAR_HOST_URL: http://3.92.231.52
-    SONAR_LOGIN: sqp_51f14dc3c99ed3b3dcaa80dbb73f0ce899452cf9
-    SONAR_PROJECT_KEY: juhi-final
-
-phases:
-  install:
-    runtime-versions:
-      nodejs: 18
-    commands:
-      - echo "Installing backend dependencies..."
-      - cd $BACKEND_DIR && npm install
-      - cd ../$FRONTEND_DIR && npm install
-      - cd ../
-      - echo "Downloading SonarQube Scanner v$SONAR_SCANNER_VERSION..."
-      - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
-      - unzip sonar-scanner.zip
-      - mv sonar-scanner-$SONAR_SCANNER_VERSION-linux /opt/sonar-scanner
-      - export PATH=$PATH:/opt/sonar-scanner/bin
-      - echo "SonarQube Scanner installed."
-
-  pre_build:
-    commands:
-      - echo "Running SonarQube Scan..."
-      - export PATH=$PATH:/opt/sonar-scanner/bin
-      - sonar-scanner -Dsonar.projectKey=juhi-final -Dsonar.sources=. -Dsonar.host.url=http://3.92.231.52 -Dsonar.login=sqp_51f14dc3c99ed3b3dcaa80dbb73f0ce899452cf9
-      - echo "Logging into Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 235494811179.dkr.ecr.us-east-1.amazonaws.com
-
-  build:
-    commands:
-      - echo "Building backend Docker image..."
-      - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
-      - echo "Pushing backend Docker image..."
-      - docker push $IMAGE_REPO_BACKEND:latest
-      # Wait for the backend LoadBalancer DNS to be ready and build frontend with the correct backend URL
-      - |
-        echo "Waiting for backend LoadBalancer DNS..."
-        for i in {1..30}; do
-          BACKEND_LB=$(kubectl get svc backend-service -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-          if [[ -n "$BACKEND_LB" ]]; then
-            echo "Backend LB DNS found: $BACKEND_LB"
-            break
-          fi
-          echo "Waiting for backend LB DNS... ($i/30)"
-          sleep 10
-        done
-        if [[ -z "$BACKEND_LB" ]]; then
-          echo "ERROR: Backend LB DNS not found"
-          exit 1
-        fi
-        echo "Building frontend Docker image with backend URL: http://$BACKEND_LB:4000"
-        docker build --build-arg REACT_APP_BACKEND_URL="http://$BACKEND_LB:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
-        echo "Pushing frontend Docker image..."
-        docker push $IMAGE_REPO_FRONTEND:latest
-
-artifacts:
-  base-directory: k8s
-  files:
-    - '**/*'
+FROM public.ecr.aws/docker/library/node:18
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+EXPOSE 3000
+CMD ["npx", "serve", "-s", "build"]
