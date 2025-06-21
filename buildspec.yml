@@ -1,4 +1,5 @@
 version: 0.2
+
 env:
   variables:
     BACKEND_DIR: backend
@@ -6,6 +7,11 @@ env:
     IMAGE_REPO_BACKEND: 235494811179.dkr.ecr.us-east-1.amazonaws.com/inventory-backend
     IMAGE_REPO_FRONTEND: 235494811179.dkr.ecr.us-east-1.amazonaws.com/inventory-frontend
     AWS_DEFAULT_REGION: us-east-1
+    SONAR_SCANNER_VERSION: 5.0.1.3006
+    SONAR_HOST_URL: http://3.92.231.52
+    SONAR_LOGIN: sqp_51f14dc3c99ed3b3dcaa80dbb73f0ce899452cf9
+    SONAR_PROJECT_KEY: juhi-final
+
 phases:
   install:
     runtime-versions:
@@ -15,11 +21,11 @@ phases:
       - cd $BACKEND_DIR && npm install
       - cd ../$FRONTEND_DIR && npm install
       - cd ../
-      # Download SonarQube Scanner
-      - echo "Downloading SonarQube Scanner..."
-      - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
+      # SonarQube Scanner install
+      - echo "Downloading SonarQube Scanner v$SONAR_SCANNER_VERSION..."
+      - wget -O sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
       - unzip sonar-scanner.zip
-      - mv sonar-scanner-5.0.1.3006-linux /opt/sonar-scanner
+      - mv sonar-scanner-$SONAR_SCANNER_VERSION-linux /opt/sonar-scanner
       - export PATH=$PATH:/opt/sonar-scanner/bin
       - echo "SonarQube Scanner installed."
 
@@ -27,22 +33,26 @@ phases:
     commands:
       - echo "Running SonarQube Scan..."
       - export PATH=$PATH:/opt/sonar-scanner/bin
-      - sonar-scanner -Dsonar.projectKey=juhi-final -Dsonar.sources=. -Dsonar.host.url=http://3.92.231.52 -Dsonar.login=sqp_51f14dc3c99ed3b3dcaa80dbb73f0ce899452cf9
+      - sonar-scanner \
+          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+          -Dsonar.sources=. \
+          -Dsonar.host.url=$SONAR_HOST_URL \
+          -Dsonar.login=$SONAR_LOGIN
+      # ECR login
+      - echo "Logging into Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 235494811179.dkr.ecr.us-east-1.amazonaws.com
 
   build:
     commands:
-      - echo "Building frontend..."
-      - cd $FRONTEND_DIR
-      - REACT_APP_BACKEND_URL="http://backend-service:4000" npm run build
-      - cd ../
-      - echo "Logging into Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 235494811179.dkr.ecr.us-east-1.amazonaws.com
       - echo "Building backend Docker image..."
       - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
-      - echo "Building frontend Docker image..."
-      - docker build -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
+
+      - echo "Building frontend Docker image (inject backend URL)..."
+      - docker build --build-arg REACT_APP_BACKEND_URL="http://backend-service:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
+
       - echo "Pushing backend Docker image..."
       - docker push $IMAGE_REPO_BACKEND:latest
+
       - echo "Pushing frontend Docker image..."
       - docker push $IMAGE_REPO_FRONTEND:latest
 
