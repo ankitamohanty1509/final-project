@@ -1,6 +1,4 @@
-
 version: 0.2
-
 env:
   variables:
     BACKEND_DIR: backend
@@ -38,7 +36,7 @@ phases:
       - REACT_APP_BACKEND_URL="a752484291a8f4f6ebe7fdcb7470ebcb-c1db37030359f84e.elb.us-west-1.amazonaws.com:4000" npm run build
       - cd ../
       - echo "Logging into Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 713881797197.dkr.ecr.us-west-1.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin 235494811179.dkr.ecr.us-west-1.amazonaws.com
       - echo "Building backend Docker image..."
       - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
       - echo "Building frontend Docker image..."
