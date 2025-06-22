@@ -6,7 +6,7 @@ function App() {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-  
+
   // Fetch items from backend
   const fetchItems = () => {
     fetch(`${backendUrl}/items`)
@@ -63,17 +63,22 @@ function App() {
         <button onClick={handleAddItem}>Add Item</button>
       </div>
 
-      {items.length === 0 ? (
-        <p>No items found.</p>
-      ) : (
-        <ul>
-          {items.map((item, index) => (
-            <li key={index}>
-              {item.name} - Quantity: {item.quantity}
-            </li>
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((item) => (
+            <tr key={item.id}>
+              <td>{item.name}</td>
+              <td>{item.quantity}</td>
+            </tr>
           ))}
-        </ul>
-      )}
+        </tbody>
+      </table>
     </div>
   );
 }
