@@ -14,11 +14,9 @@ app.use(express.json());
 // Add new item
 app.post('/add-item', (req, res) => {
   const { name, quantity } = req.body;
-
   if (!name || !quantity) {
     return res.status(400).json({ error: 'Missing name or quantity' });
   }
-
   const query = 'INSERT INTO items (name, quantity) VALUES (?, ?)';
   db.query(query, [name, quantity], (err, result) => {
     if (err) {
@@ -40,7 +38,7 @@ app.get('/items', (req, res) => {
   });
 });
 
-// ====== Health Check Route ======
+// Health check route
 app.get('/health', (req, res) => res.send('OK'));
 
 // ========== Serve React Frontend ==========
