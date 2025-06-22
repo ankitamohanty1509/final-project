@@ -40,8 +40,10 @@ app.get('/items', (req, res) => {
   });
 });
 
-// ========== Serve React Frontend ==========
+// ====== Health Check Route ======
+app.get('/health', (req, res) => res.send('OK'));
 
+// ========== Serve React Frontend ==========
 app.use(express.static(path.join(__dirname, '../frontend/build')));
 
 app.get('*', (req, res) => {
@@ -49,7 +51,6 @@ app.get('*', (req, res) => {
 });
 
 // ========== Start Server ==========
-
 app.listen(PORT, () => {
   console.log(`✅ Inventory Service is running on port ${PORT}`);
 });
