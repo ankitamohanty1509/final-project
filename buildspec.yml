@@ -49,11 +49,9 @@ phases:
       - docker build -t $IMAGE_REPO_BACKEND:latest $BACKEND_DIR
       - echo "Pushing backend Docker image..."
       - docker push $IMAGE_REPO_BACKEND:latest
-      # --- Deploy backend and DB secret, so service is created! ---
       - echo "Deploying backend and DB secret to EKS..."
       - kubectl apply -f k8s/db-secret.yaml
       - kubectl apply -f k8s/backend-deployment.yaml
-      # --- Wait for backend LoadBalancer DNS to be assigned ---
       - |
         echo "Waiting for backend LoadBalancer DNS...";
         for i in {1..30}; do
@@ -69,14 +67,12 @@ phases:
           echo "ERROR: Backend LB DNS not found";
           exit 1;
         fi;
-      # --- Build and push frontend with correct backend URL ---
-      - echo "Building frontend Docker image with backend URL: http://$BACKEND_LB:4000";
-      - docker build --build-arg REACT_APP_BACKEND_URL="http://$BACKEND_LB:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR
-      - echo "Pushing frontend Docker image..."
-      - docker push $IMAGE_REPO_FRONTEND:latest
-      # --- Deploy frontend ---
-      - echo "Deploying frontend to EKS..."
-      - kubectl apply -f k8s/frontend-deployment.yaml
+        echo "Building frontend Docker image with backend URL: http://$BACKEND_LB:4000";
+        docker build --build-arg REACT_APP_BACKEND_URL="http://$BACKEND_LB:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR;
+        echo "Pushing frontend Docker image...";
+        docker push $IMAGE_REPO_FRONTEND:latest;
+        echo "Deploying frontend to EKS...";
+        kubectl apply -f k8s/frontend-deployment.yaml
 
 artifacts:
   base-directory: k8s
