@@ -13,6 +13,7 @@ RUN npm install
 COPY . .
 
 # Build the React app with the backend URL
+RUN echo "BUILD-TIME REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL"
 RUN npm run build
 
 # --- Serve the static files using a lightweight server ---
