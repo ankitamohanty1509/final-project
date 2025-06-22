@@ -65,6 +65,7 @@ phases:
           exit 1;
         fi;
         echo "Building frontend Docker image with backend URL: http://$BACKEND_LB:4000";
+        echo "Using Backend LoadBalancer: $BACKEND_LB"
         docker build --build-arg REACT_APP_BACKEND_URL="http://$BACKEND_LB:4000" -t $IMAGE_REPO_FRONTEND:latest $FRONTEND_DIR;
         echo "Pushing frontend Docker image...";
         docker push $IMAGE_REPO_FRONTEND:latest
