@@ -45,36 +45,36 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Inventory Items</h1>
+      <h1>User data</h1>
 
       <div style={{ marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="Item name"
+          placeholder="User name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <input
           type="number"
-          placeholder="Quantity"
+          placeholder="Age"
           value={quantity}
           onChange={(e) => setQuantity(e.target.value)}
         />
-        <button onClick={handleAddItem}>Add Item</button>
+        <button onClick={handleAddItem}>Add Name</button>
       </div>
 
       <table>
         <thead>
           <tr>
             <th>Name</th>
-            <th>Quantity</th>
+            <th>Age</th>
           </tr>
         </thead>
         <tbody>
           {items.map((item) => (
             <tr key={item.id}>
               <td>{item.name}</td>
-              <td>{item.quantity}</td>
+              <td>{item.age}</td>
             </tr>
           ))}
         </tbody>
